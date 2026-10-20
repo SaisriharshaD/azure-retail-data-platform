@@ -1,7 +1,6 @@
 import csv
 from pathlib import Path
 
-# Find the project root, regardless of where the script is launched.
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = PROJECT_ROOT / "data" / "source"
 OUTPUT_FILE = OUTPUT_DIR / "orders.csv"
@@ -28,6 +27,14 @@ orders = [
         "customer_id": "",
         "order_date": "2026-10-20",
         "order_amount": "-25.00",
+        "currency": "USD",
+        "order_status": "PLACED",
+    },
+    {
+        "order_id": "ORD-1004",
+        "customer_id": "CUST-004",
+        "order_date": "2026-10-20",
+        "order_amount": "abc",
         "currency": "USD",
         "order_status": "PLACED",
     },

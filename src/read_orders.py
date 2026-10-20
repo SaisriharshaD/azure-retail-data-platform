@@ -62,8 +62,10 @@ def main():
 
             accepted_count = 0
             rejected_count = 0
+            input_count = 0
 
             for order in reader:
+                input_count += 1
                 errors = validate_order(order)
 
                 if errors:
@@ -76,8 +78,14 @@ def main():
                     accepted_writer.writerow(order)
                     accepted_count += 1
 
+    print(f"Input: {input_count}")
     print(f"Accepted: {accepted_count}")
     print(f"Rejected: {rejected_count}")
+
+    if input_count != accepted_count + rejected_count:
+        raise RuntimeError("Reconciliation failed: record counts do not match")
+
+    print("Reconciliation passed")
     print(f"Files saved to: {OUTPUT_DIR}")
 
 
