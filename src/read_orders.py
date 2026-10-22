@@ -1,7 +1,8 @@
 import argparse
 import csv
 from decimal import Decimal, InvalidOperation
-
+from datetime import datetime, timezone
+import json
 from src.settings import load_settings
 
 
@@ -39,7 +40,8 @@ def main():
     settings = load_settings(args.env)
 
     input_file = settings["source_dir"] / "orders.csv"
-    output_dir = settings["validated_dir"]
+    run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+    output_dir = settings["validated_dir"] / run_id
 
     with input_file.open("r", newline="", encoding="utf-8") as source:
         reader = csv.DictReader(source)
@@ -104,6 +106,22 @@ def main():
         raise RuntimeError(
             "Reconciliation failed: record counts do not match"
         )
+
+    summary = {
+        "run_id": run_id,
+        "environment": settings["environment"],
+        "status": "SUCCEEDED",
+        "input_count": input_count,
+        "accepted_count": accepted_count,
+        "rejected_count": rejected_count,
+        "reconciliation_passed": True,
+        "completed_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+    summary_file = output_dir / "run_summary.json"
+
+    with summary_file.open("w", encoding="utf-8") as file:
+        json.dump(summary, file, indent=4)
 
     print("Reconciliation passed")
     print(f"Files saved to: {output_dir}")
