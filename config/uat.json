@@ -1,0 +1,5 @@
+{
+    "environment": "uat",
+    "source_dir": "data/uat/source",
+    "validated_dir": "data/uat/validated"
+}

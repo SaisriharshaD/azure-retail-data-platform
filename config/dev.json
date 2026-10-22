@@ -1,0 +1,5 @@
+{
+    "environment": "dev",
+    "source_dir": "data/dev/source",
+    "validated_dir": "data/dev/validated"
+}

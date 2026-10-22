@@ -1,10 +1,8 @@
+import argparse
 import csv
 from decimal import Decimal, InvalidOperation
-from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-INPUT_FILE = PROJECT_ROOT / "data" / "source" / "orders.csv"
-OUTPUT_DIR = PROJECT_ROOT / "data" / "validated"
+from src.settings import load_settings
 
 
 def validate_order(order):
@@ -28,9 +26,22 @@ def validate_order(order):
 
 
 def main():
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    parser = argparse.ArgumentParser(
+        description="Validate orders for a selected environment."
+    )
+    parser.add_argument(
+        "--env",
+        choices=["dev", "uat", "prod"],
+        required=True,
+    )
+    args = parser.parse_args()
 
-    with INPUT_FILE.open("r", newline="", encoding="utf-8") as source:
+    settings = load_settings(args.env)
+
+    input_file = settings["source_dir"] / "orders.csv"
+    output_dir = settings["validated_dir"]
+
+    with input_file.open("r", newline="", encoding="utf-8") as source:
         reader = csv.DictReader(source)
         fields = reader.fieldnames
 
@@ -41,28 +52,34 @@ def main():
         missing_fields = required_fields - set(fields)
 
         if missing_fields:
-            raise ValueError(f"Missing required columns: {sorted(missing_fields)}")
+            raise ValueError(
+                f"Missing required columns: {sorted(missing_fields)}"
+            )
 
-        accepted_path = OUTPUT_DIR / "accepted_orders.csv"
-        rejected_path = OUTPUT_DIR / "rejected_orders.csv"
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        accepted_path = output_dir / "accepted_orders.csv"
+        rejected_path = output_dir / "rejected_orders.csv"
 
         with (
             accepted_path.open("w", newline="", encoding="utf-8") as accepted_file,
             rejected_path.open("w", newline="", encoding="utf-8") as rejected_file,
         ):
             accepted_writer = csv.DictWriter(
-                accepted_file, fieldnames=fields
+                accepted_file,
+                fieldnames=fields,
             )
             rejected_writer = csv.DictWriter(
-                rejected_file, fieldnames=fields + ["rejection_reasons"]
+                rejected_file,
+                fieldnames=fields + ["rejection_reasons"],
             )
 
             accepted_writer.writeheader()
             rejected_writer.writeheader()
 
+            input_count = 0
             accepted_count = 0
             rejected_count = 0
-            input_count = 0
 
             for order in reader:
                 input_count += 1
@@ -78,15 +95,18 @@ def main():
                     accepted_writer.writerow(order)
                     accepted_count += 1
 
+    print(f"Environment: {settings['environment']}")
     print(f"Input: {input_count}")
     print(f"Accepted: {accepted_count}")
     print(f"Rejected: {rejected_count}")
 
     if input_count != accepted_count + rejected_count:
-        raise RuntimeError("Reconciliation failed: record counts do not match")
+        raise RuntimeError(
+            "Reconciliation failed: record counts do not match"
+        )
 
     print("Reconciliation passed")
-    print(f"Files saved to: {OUTPUT_DIR}")
+    print(f"Files saved to: {output_dir}")
 
 
 if __name__ == "__main__":
